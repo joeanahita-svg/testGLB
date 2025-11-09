@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D GLB Model Viewer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        #header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+            max-height: 50vh;
+            overflow-y: auto;
+        }
+        
+        #header h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        
+        #controls {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        #fileName {
+            color: #666;
+            font-size: 14px;
+            font-style: italic;
+        }
+        
+        #objectList {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            display: none;
+        }
+        
+        #objectList h3 {
+            margin-bottom: 10px;
+            font-size: 16px;
+            color: #333;
+        }
+        
+        .object-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            background: #f5f5f5;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        
+        .object-item input[type="checkbox"] {
+            margin-right: 10px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+        
+        .object-item label {
+            cursor: pointer;
+            flex: 1;
+        }
+        
+        .object-info {
+            font-size: 12px;
+            color: #888;
+            margin-left: 10px;
+        }
+        
+        #container {
+            flex: 1;
+            position: relative;
+            background: #1a1a2e;
+        }
+        
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            text-align: center;
+            z-index: 10;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        #instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            font-size: 18px;
+            pointer-events: none;
+        }
+        
+        .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>🎨 3D Model Viewer</h1>
+        <div id="objectList"></div>
+    </div>
+    
+    <div id="container">
+        <div id="loading" style="display: none;">
+            <div class="spinner"></div>
+            Loading model...
+        </div>
+        <div id="instructions">
+            <div class="icon">📦</div>
+            <div>Click "Load GLB Model" to view your 3D file</div>
+            <div style="font-size: 14px; margin-top: 10px; opacity: 0.6;">
+                Left click + drag to rotate • Right click + drag to pan • Scroll to zoom
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        let scene, camera, renderer, controls, model;
+        let container = document.getElementById('container');
+        let allObjects = [];
+        
+        // Initialize Three.js scene
+        function initScene() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x1a1a2e);
+            
+            // Camera
+            camera = new THREE.PerspectiveCamera(
+                75,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(0, 2, 5);
+            
+            // Renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+            
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            
+            const directionalLight2 = new THREE.DirectionalLight(0xffffff, 0.4);
+            directionalLight2.position.set(-5, 5, -5);
+            scene.add(directionalLight2);
+            
+            // Simple orbit controls (manual implementation)
+            setupControls();
+            
+            // Handle window resize
+            window.addEventListener('resize', onWindowResize);
+            
+            // Start animation loop
+            animate();
+        }
+        
+        function setupControls() {
+            let isDragging = false;
+            let isPanning = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            
+            renderer.domElement.addEventListener('mousedown', (e) => {
+                if (e.button === 0) isDragging = true;
+                if (e.button === 2) isPanning = true;
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                if (isDragging && model) {
+                    const deltaX = e.clientX - previousMousePosition.x;
+                    const deltaY = e.clientY - previousMousePosition.y;
+                    
+                    model.rotation.y += deltaX * 0.01;
+                    model.rotation.x += deltaY * 0.01;
+                }
+                
+                if (isPanning) {
+                    const deltaX = e.clientX - previousMousePosition.x;
+                    const deltaY = e.clientY - previousMousePosition.y;
+                    
+                    camera.position.x -= deltaX * 0.01;
+                    camera.position.y += deltaY * 0.01;
+                }
+                
+                previousMousePosition = { x: e.clientX, y: e.clientY };
+            });
+            
+            renderer.domElement.addEventListener('mouseup', () => {
+                isDragging = false;
+                isPanning = false;
+            });
+            
+            renderer.domElement.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                const delta = e.deltaY * 0.01;
+                camera.position.z += delta;
+                camera.position.z = Math.max(1, Math.min(50, camera.position.z));
+            });
+            
+            renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+        }
+        
+        function displayObjectList() {
+            const listDiv = document.getElementById('objectList');
+            listDiv.innerHTML = '<h3>📋 Objects in Model (' + allObjects.length + '):</h3>';
+            
+            allObjects.forEach((obj, index) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'object-item';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.checked = obj.visible;
+                checkbox.id = 'obj-' + index;
+                checkbox.addEventListener('change', () => {
+                    obj.visible = checkbox.checked;
+                });
+                
+                const label = document.createElement('label');
+                label.htmlFor = 'obj-' + index;
+                const name = obj.name || 'Object ' + (index + 1);
+                const geom = obj.geometry;
+                const vertCount = geom ? geom.attributes.position.count : 0;
+                label.innerHTML = name + ' <span class="object-info">(' + vertCount + ' vertices)</span>';
+                
+                itemDiv.appendChild(checkbox);
+                itemDiv.appendChild(label);
+                listDiv.appendChild(itemDiv);
+            });
+            
+            listDiv.style.display = 'block';
+        }
+        
+        function loadModelFromFile(file) {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('instructions').style.display = 'none';
+            document.getElementById('objectList').style.display = 'none';
+            
+            // Remove previous model
+            if (model) {
+                scene.remove(model);
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const arrayBuffer = e.target.result;
+                
+                const loader = new THREE.GLTFLoader();
+                loader.parse(arrayBuffer, '', function(gltf) {
+                    model = gltf.scene;
+                    
+                    // Collect all mesh objects
+                    allObjects = [];
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            allObjects.push(child);
+                        }
+                    });
+                    
+                    console.log('Found', allObjects.length, 'mesh objects in the model');
+                    
+                    // Center and scale the model
+                    const box = new THREE.Box3().setFromObject(model);
+                    const center = box.getCenter(new THREE.Vector3());
+                    const size = box.getSize(new THREE.Vector3());
+                    
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const scale = 3 / maxDim;
+                    model.scale.setScalar(scale);
+                    
+                    model.position.sub(center.multiplyScalar(scale));
+                    
+                    scene.add(model);
+                    
+                    // Display object list
+                    displayObjectList();
+                    
+                    document.getElementById('loading').style.display = 'none';
+                }, function(error) {
+                    console.error('Error loading model:', error);
+                    document.getElementById('loading').innerHTML = 
+                        '<div style="color: #ff6b6b;">Error loading model. Please check the file.</div>';
+                });
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // Auto-load model.glb on page load
+        function autoLoadModel() {
+            fetch('model.glb')
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('model.glb not found');
+                    }
+                    return response.blob();
+                })
+                .then(blob => {
+                    loadModelFromFile(blob);
+                })
+                .catch(error => {
+                    console.error('Could not auto-load model.glb:', error);
+                    document.getElementById('instructions').innerHTML = 
+                        '<div class="icon">❌</div>' +
+                        '<div>model.glb not found in the same directory</div>' +
+                        '<div style="font-size: 14px; margin-top: 10px; opacity: 0.6;">' +
+                        'Place model.glb in the same folder as this HTML file' +
+                        '</div>';
+                });
+        }
+        
+        function onWindowResize() {
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+        
+        function animate() {
+            requestAnimationFrame(animate);
+            renderer.render(scene, camera);
+        }
+        
+        // GLTFLoader implementation
+        THREE.GLTFLoader = (function() {
+            function GLTFLoader() {}
+            
+            GLTFLoader.prototype.parse = function(data, path, onLoad, onError) {
+                try {
+                    const json = this.parseGLB(data);
+                    const parser = new GLTFParser(json, data);
+                    parser.parse(onLoad, onError);
+                } catch (e) {
+                    if (onError) onError(e);
+                }
+            };
+            
+            GLTFLoader.prototype.parseGLB = function(data) {
+                const view = new DataView(data);
+                const magic = view.getUint32(0, true);
+                
+                if (magic !== 0x46546C67) {
+                    throw new Error('Invalid GLB file');
+                }
+                
+                const jsonChunkLength = view.getUint32(12, true);
+                const jsonChunkData = new Uint8Array(data, 20, jsonChunkLength);
+                const jsonString = new TextDecoder().decode(jsonChunkData);
+                
+                return JSON.parse(jsonString);
+            };
+            
+            return GLTFLoader;
+        })();
+        
+        function GLTFParser(json, glbData) {
+            this.json = json;
+            this.glbData = glbData;
+        }
+        
+        GLTFParser.prototype.parse = function(onLoad, onError) {
+            try {
+                const scene = new THREE.Group();
+                const sceneData = this.json.scenes[0];
+                
+                for (let nodeIndex of sceneData.nodes) {
+                    const node = this.parseNode(nodeIndex);
+                    if (node) scene.add(node);
+                }
+                
+                onLoad({ scene: scene });
+            } catch (e) {
+                if (onError) onError(e);
+            }
+        };
+        
+        GLTFParser.prototype.parseNode = function(index) {
+            const nodeData = this.json.nodes[index];
+            const node = new THREE.Group();
+            
+            if (nodeData.name) {
+                node.name = nodeData.name;
+            }
+            
+            // Apply transformations
+            if (nodeData.translation) {
+                node.position.set(nodeData.translation[0], nodeData.translation[1], nodeData.translation[2]);
+            }
+            if (nodeData.rotation) {
+                node.quaternion.set(nodeData.rotation[0], nodeData.rotation[1], nodeData.rotation[2], nodeData.rotation[3]);
+            }
+            if (nodeData.scale) {
+                node.scale.set(nodeData.scale[0], nodeData.scale[1], nodeData.scale[2]);
+            }
+            if (nodeData.matrix) {
+                node.matrix.fromArray(nodeData.matrix);
+                node.matrix.decompose(node.position, node.quaternion, node.scale);
+            }
+            
+            if (nodeData.mesh !== undefined) {
+                const mesh = this.parseMesh(nodeData.mesh);
+                if (mesh) {
+                    if (nodeData.name && !mesh.name) {
+                        mesh.name = nodeData.name;
+                    }
+                    node.add(mesh);
+                }
+            }
+            
+            if (nodeData.children) {
+                for (let childIndex of nodeData.children) {
+                    const child = this.parseNode(childIndex);
+                    if (child) node.add(child);
+                }
+            }
+            
+            return node;
+        };
+        
+        GLTFParser.prototype.parseMesh = function(index) {
+            const meshData = this.json.meshes[index];
+            const group = new THREE.Group();
+            
+            if (meshData.name) {
+                group.name = meshData.name;
+            }
+            
+            for (let i = 0; i < meshData.primitives.length; i++) {
+                const primitive = meshData.primitives[i];
+                const geometry = this.parseGeometry(primitive);
+                
+                // Check if vertex colors exist
+                const hasVertexColors = primitive.attributes.COLOR_0 !== undefined;
+                
+                // Determine color based on element type from name
+                let elementColor = 0x888888; // Default gray
+                const name = (meshData.name || '').toLowerCase();
+                
+                if (name.includes('beam')) {
+                    elementColor = 0x3498db; // Blue for beams
+                } else if (name.includes('column')) {
+                    elementColor = 0xe74c3c; // Red for columns
+                } else if (name.includes('brace') || name.includes('bracing')) {
+                    elementColor = 0x2ecc71; // Green for braces
+                } else if (name.includes('slab') || name.includes('floor')) {
+                    elementColor = 0x95a5a6; // Gray for slabs
+                } else if (name.includes('wall')) {
+                    elementColor = 0xf39c12; // Orange for walls
+                } else if (name.includes('foundation') || name.includes('footing')) {
+                    elementColor = 0x8e44ad; // Purple for foundation
+                } else if (name.includes('truss')) {
+                    elementColor = 0x1abc9c; // Teal for trusses
+                } else if (name.includes('joist')) {
+                    elementColor = 0x16a085; // Dark teal for joists
+                } else if (name.includes('girder')) {
+                    elementColor = 0x2980b9; // Dark blue for girders
+                } else if (name.includes('stair')) {
+                    elementColor = 0xe67e22; // Dark orange for stairs
+                } else if (name.includes('railing') || name.includes('handrail')) {
+                    elementColor = 0x34495e; // Dark gray for railings
+                } else if (name.includes('door')) {
+                    elementColor = 0xd35400; // Brown for doors
+                } else if (name.includes('window')) {
+                    elementColor = 0x3498db; // Light blue for windows
+                } else if (name.includes('roof')) {
+                    elementColor = 0xc0392b; // Dark red for roof
+                }
+                
+                // Get material properties
+                let materialParams = {
+                    color: elementColor,
+                    roughness: 0.7,
+                    metalness: 0.3,
+                    vertexColors: hasVertexColors
+                };
+                
+                // If vertex colors exist, use them (they will override the base color)
+                if (!hasVertexColors && primitive.material !== undefined && this.json.materials) {
+                    const matData = this.json.materials[primitive.material];
+                    if (matData.pbrMetallicRoughness) {
+                        const pbr = matData.pbrMetallicRoughness;
+                        if (pbr.baseColorFactor) {
+                            // Check if the material color is not black (0,0,0)
+                            const matColor = pbr.baseColorFactor;
+                            if (matColor[0] > 0.01 || matColor[1] > 0.01 || matColor[2] > 0.01) {
+                                materialParams.color = new THREE.Color(
+                                    matColor[0],
+                                    matColor[1],
+                                    matColor[2]
+                                );
+                            }
+                        }
+                        if (pbr.metallicFactor !== undefined) {
+                            materialParams.metalness = pbr.metallicFactor;
+                        }
+                        if (pbr.roughnessFactor !== undefined) {
+                            materialParams.roughness = pbr.roughnessFactor;
+                        }
+                    }
+                }
+                
+                const material = new THREE.MeshStandardMaterial(materialParams);
+                
+                const mesh = new THREE.Mesh(geometry, material);
+                if (meshData.primitives.length > 1) {
+                    mesh.name = (meshData.name || 'Mesh') + '_primitive_' + i;
+                } else {
+                    mesh.name = meshData.name || 'Mesh';
+                }
+                group.add(mesh);
+            }
+            
+            return group;
+        };
+        
+        GLTFParser.prototype.parseGeometry = function(primitive) {
+            const geometry = new THREE.BufferGeometry();
+            
+            // Parse positions
+            if (primitive.attributes.POSITION !== undefined) {
+                const positions = this.parseAccessor(primitive.attributes.POSITION);
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            }
+            
+            // Parse normals
+            if (primitive.attributes.NORMAL !== undefined) {
+                const normals = this.parseAccessor(primitive.attributes.NORMAL);
+                geometry.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+            } else {
+                geometry.computeVertexNormals();
+            }
+            
+            // Parse UVs
+            if (primitive.attributes.TEXCOORD_0 !== undefined) {
+                const uvs = this.parseAccessor(primitive.attributes.TEXCOORD_0);
+                geometry.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+            }
+            
+            // Parse vertex colors - PRIORITY for coloring
+            if (primitive.attributes.COLOR_0 !== undefined) {
+                const colorAccessor = this.json.accessors[primitive.attributes.COLOR_0];
+                const colors = this.parseAccessor(primitive.attributes.COLOR_0);
+                
+                // Check if colors are RGB (3 components) or RGBA (4 components)
+                const colorSize = {
+                    VEC3: 3,
+                    VEC4: 4
+                }[colorAccessor.type] || 3;
+                
+                // If RGBA, we need to extract just RGB
+                if (colorSize === 4) {
+                    const rgbColors = new Float32Array((colors.length / 4) * 3);
+                    for (let i = 0, j = 0; i < colors.length; i += 4, j += 3) {
+                        rgbColors[j] = colors[i];
+                        rgbColors[j + 1] = colors[i + 1];
+                        rgbColors[j + 2] = colors[i + 2];
+                    }
+                    geometry.setAttribute('color', new THREE.BufferAttribute(rgbColors, 3));
+                } else {
+                    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                }
+            }
+            
+            // Parse indices
+            if (primitive.indices !== undefined) {
+                const indices = this.parseAccessor(primitive.indices);
+                geometry.setIndex(new THREE.BufferAttribute(indices, 1));
+            }
+            
+            return geometry;
+        };
+        
+        GLTFParser.prototype.parseAccessor = function(index) {
+            const accessor = this.json.accessors[index];
+            const bufferView = this.json.bufferViews[accessor.bufferView];
+            
+            const view = new DataView(this.glbData);
+            const jsonChunkLength = view.getUint32(12, true);
+            const binaryChunkStart = 20 + jsonChunkLength + 8;
+            
+            const byteOffset = binaryChunkStart + (bufferView.byteOffset || 0) + (accessor.byteOffset || 0);
+            
+            const TypedArray = {
+                5126: Float32Array,
+                5123: Uint16Array,
+                5125: Uint32Array
+            }[accessor.componentType];
+            
+            const count = accessor.count * {
+                SCALAR: 1,
+                VEC2: 2,
+                VEC3: 3,
+                VEC4: 4
+            }[accessor.type];
+            
+            return new TypedArray(this.glbData, byteOffset, count);
+        };
+        
+        // Initialize scene on load
+        initScene();
+        
+        // Auto-load model.glb when page loads
+        window.addEventListener('load', autoLoadModel);
+    </script>
+</body>
+</html>
