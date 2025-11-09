@@ -854,18 +854,23 @@
                         const size = box.getSize(new THREE.Vector3());
                         
                         const maxDim = Math.max(size.x, size.y, size.z);
-                        const scale = 8 / maxDim;
-                        model.scale.setScalar(scale);
                         
-                        model.position.sub(center.multiplyScalar(scale));
+                        // Don't scale the model - keep original size
+                        // model.scale.setScalar(scale);
+                        
+                        // Center the model at origin
+                        model.position.sub(center);
                         
                         scene.add(model);
                         
-                        // Update camera to view the model
-                        const distance = maxDim * 2;
-                        camera.position.set(distance * 0.8, distance * 0.5, distance * 0.8);
-                        cameraTarget.copy(center);
-                        cameraPan.copy(center);
+                        // Update camera to view the model - position based on actual model size
+                        // Use a multiplier that works well for viewing (1.5x the max dimension)
+                        const distance = maxDim * 1.5;
+                        camera.position.set(distance * 0.7, distance * 0.4, distance * 0.7);
+                        
+                        // Look at the center of the model (now at origin)
+                        cameraTarget.set(0, 0, 0);
+                        cameraPan.set(0, 0, 0);
                         camera.lookAt(cameraTarget);
                         
                         document.getElementById('loading').style.display = 'none';
