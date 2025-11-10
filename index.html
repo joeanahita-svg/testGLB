@@ -1282,13 +1282,15 @@
                 });
                 const cone = new THREE.Mesh(geometry, material);
                 // cone.rotation.x = Math.PI;
-                cone.position.y = -0.3;
-                group.add(cone);
+                //cone.position.y = -0.3;
+                //group.add(cone);
 
                 // Add base plate
-                const plateGeom = new THREE.CylinderGeometry(0.4, 0.4, 0.1, 8);
+                const plateHeight = 0.1;
+                const plateGeom = new THREE.CylinderGeometry(0.4, 0.4, plateHeight, 16);
                 const plate = new THREE.Mesh(plateGeom, material);
-                plate.position.y = -0.65;
+                // Put the plate so its TOP sits at y = 0 (before the group’s X-rotation)
+                plate.position.y = -plateHeight / 2;   // was -0.65 with the cone present
                 group.add(plate);
 
             } else if (supportData.type === 'pinned') {
