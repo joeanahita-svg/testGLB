@@ -18,7 +18,7 @@ const ELEMENT_COLORS = {
 };
 
 const CROSS_SECTIONS = {
-    RECTANGULAR_C40x40-12T14: { type: 'rectangular', width: 0.400, height: 0.400 },
+    RECTANGULAR_B40x40: { type: 'rectangular', width: 0.400, height: 0.400 },
     RECTANGULAR_B40x40: { type: 'rectangular', width: 0.400, height: 0.400 },
     RECTANGULAR_B30x40: { type: 'rectangular', width: 0.300, height: 0.400 },
 };
@@ -26,14 +26,14 @@ const CROSS_SECTIONS = {
 const structuralData = {
     // Columns (start point, end point, cross-section, local rotation angle in degrees)
     columns: [
-        { id: '1', start: [0.000, -0.000, -1.500], end: [0.000, -0.000, 3.900], section: 'RECTANGULAR_C40x40-12T14', rotation: 90 },
-        { id: '2', start: [3.100, 0.000, -1.500], end: [3.100, 0.000, 3.900], section: 'RECTANGULAR_C40x40-12T14', rotation: 90 },
-        { id: '3', start: [5.900, 0.000, -1.500], end: [5.900, 0.000, 3.900], section: 'RECTANGULAR_C40x40-12T14', rotation: 90 },
-        { id: '4', start: [9.000, 0.000, -1.500], end: [9.000, 0.000, 3.900], section: 'RECTANGULAR_C40x40-12T14', rotation: 90 },
-        { id: '5', start: [0.000, 8.600, -1.500], end: [0.000, 8.600, 3.900], section: 'RECTANGULAR_C40x40-12T14', rotation: 90 },
-        { id: '6', start: [3.100, 8.600, -1.500], end: [3.100, 8.600, 3.900], section: 'RECTANGULAR_C40x40-12T14', rotation: 90 },
-        { id: '7', start: [5.900, 8.600, -1.500], end: [5.900, 8.600, 3.900], section: 'RECTANGULAR_C40x40-12T14', rotation: 90 },
-        { id: '8', start: [9.000, 8.600, -1.500], end: [9.000, 8.600, 3.900], section: 'RECTANGULAR_C40x40-12T14', rotation: 90 },
+        { id: '1', start: [0.000, -0.000, -1.500], end: [0.000, -0.000, 3.900], section: 'RECTANGULAR_B40x40-12T14', rotation: 90 },
+        { id: '2', start: [3.100, 0.000, -1.500], end: [3.100, 0.000, 3.900], section: 'RECTANGULAR_B40x40-12T14', rotation: 90 },
+        { id: '3', start: [5.900, 0.000, -1.500], end: [5.900, 0.000, 3.900], section: 'RECTANGULAR_B40x40-12T14', rotation: 90 },
+        { id: '4', start: [9.000, 0.000, -1.500], end: [9.000, 0.000, 3.900], section: 'RECTANGULAR_B40x40-12T14', rotation: 90 },
+        { id: '5', start: [0.000, 8.600, -1.500], end: [0.000, 8.600, 3.900], section: 'RECTANGULAR_B40x40-12T14', rotation: 90 },
+        { id: '6', start: [3.100, 8.600, -1.500], end: [3.100, 8.600, 3.900], section: 'RECTANGULAR_B40x40-12T14', rotation: 90 },
+        { id: '7', start: [5.900, 8.600, -1.500], end: [5.900, 8.600, 3.900], section: 'RECTANGULAR_B40x40-12T14', rotation: 90 },
+        { id: '8', start: [9.000, 8.600, -1.500], end: [9.000, 8.600, 3.900], section: 'RECTANGULAR_B40x40-12T14', rotation: 90 },
     ],
 
     // Beams (start point, end point, cross-section, local rotation angle in degrees)
