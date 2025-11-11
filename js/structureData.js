@@ -97,14 +97,14 @@ const structuralData = {
         { id: 'BR4', start: [6, 0, 4], end: [12, 6, 8], section: 'CIRCULAR_300', rotation: 0 }
     ],
 
-    // Slabs (defined by corner points - horizontal planes)
+    // Slabs (defined by corner points - horizontal planes at different Z levels)
     slabs: [
         { id: 'S1', points: [[0, 0, 0], [12, 0, 0], [12, 12, 0], [0, 12, 0]], thickness: 0.2 },
         { id: 'S2', points: [[0, 0, 4], [12, 0, 4], [12, 12, 4], [0, 12, 4]], thickness: 0.2 },
         { id: 'S3', points: [[0, 0, 8], [12, 0, 8], [12, 12, 8], [0, 12, 8]], thickness: 0.2 }
     ],
 
-    // Walls (defined by corner points - vertical planes, with thickness)
+    // Walls (defined by corner points - vertical perimeter walls, with thickness)
     walls: [
         { id: 'W1', points: [[0, 0, 0], [12, 0, 0], [12, 0, 8], [0, 0, 8]], thickness: 0.2 },
         { id: 'W2', points: [[0, 12, 0], [12, 12, 0], [12, 12, 8], [0, 12, 8]], thickness: 0.2 },
