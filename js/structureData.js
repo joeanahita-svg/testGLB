@@ -105,7 +105,9 @@ const structuralData = {
 
     // Walls (defined by 4 corner points - VERTICAL planes parallel to Z axis)
     // Points ordered: bottom-left, bottom-right, top-right, top-left
-    walls: [],
+    walls: [
+        { id: 'W1', points: [[0, 0, 0], [12, 0, 0], [12, 0, 8], [0, 0, 8]], thickness: 0.2 }        // Front wall along X axis at Y=0
+    ],
 
     // Supports (point location, type: 'fixed', 'pinned', 'roller')
     supports: [
