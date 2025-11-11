@@ -24,9 +24,9 @@ function init() {
     // Auto-position camera based on building size
     const cameraDistance = buildingMaxSize * 2;
     camera.position.set(
-        buildingCenter.x + cameraDistance * 0.8,
-        buildingCenter.y + cameraDistance * 0.5,
-        buildingCenter.z + cameraDistance * 0.8
+        buildingCenter.x + cameraDistance * 1.2,
+        buildingCenter.y + cameraDistance * 1.2,
+        buildingCenter.z + cameraDistance * 1.2
     );
     
     cameraTarget = new THREE.Vector3(buildingCenter.x, buildingCenter.y, buildingCenter.z);
