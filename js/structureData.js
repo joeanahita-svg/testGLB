@@ -97,19 +97,23 @@ const structuralData = {
         { id: 'BR4', start: [6, 0, 4], end: [12, 6, 8], section: 'CIRCULAR_300', rotation: 0 }
     ],
 
-    // Slabs (defined by corner points - horizontal planes at different Z levels)
+    // Slabs (defined by corner points - horizontal planes in XY at constant Z)
+    // Points ordered: bottom-left, bottom-right, top-right, top-left (when viewed from above)
     slabs: [
-        { id: 'S1', points: [[0, 0, 0], [12, 0, 0], [12, 12, 0], [0, 12, 0]], thickness: 0.2 },
-        { id: 'S2', points: [[0, 0, 4], [12, 0, 4], [12, 12, 4], [0, 12, 4]], thickness: 0.2 },
-        { id: 'S3', points: [[0, 0, 8], [12, 0, 8], [12, 12, 8], [0, 12, 8]], thickness: 0.2 }
+        { id: 'S1', points: [[0, 0, 0], [12, 0, 0], [12, 12, 0], [0, 12, 0]], thickness: 0.2 },      // Ground floor
+        { id: 'S2', points: [[0, 0, 4], [12, 0, 4], [12, 12, 4], [0, 12, 4]], thickness: 0.2 },      // First floor
+        { id: 'S3', points: [[0, 0, 8], [12, 0, 8], [12, 12, 8], [0, 12, 8]], thickness: 0.2 }       // Second floor/Roof
     ],
 
-    // Walls (defined by corner points - vertical perimeter walls, with thickness)
+    // Walls (defined by corner points - vertical planes extending in Z direction)
+    // Points ordered: bottom-left, bottom-right, top-right, top-left
     walls: [
-        { id: 'W1', points: [[0, 0, 0], [12, 0, 0], [12, 0, 8], [0, 0, 8]], thickness: 0.2 },
-        { id: 'W2', points: [[0, 12, 0], [12, 12, 0], [12, 12, 8], [0, 12, 8]], thickness: 0.2 },
-        { id: 'W3', points: [[0, 0, 0], [0, 12, 0], [0, 12, 8], [0, 0, 8]], thickness: 0.2 },
-        { id: 'W4', points: [[12, 0, 0], [12, 12, 0], [12, 12, 8], [12, 0, 8]], thickness: 0.2 }
+        // Perimeter walls along X-axis (constant Y)
+        { id: 'W1', points: [[0, 0, 0], [12, 0, 0], [12, 0, 8], [0, 0, 8]], thickness: 0.2 },        // Front wall (Y=0)
+        { id: 'W2', points: [[0, 12, 0], [12, 12, 0], [12, 12, 8], [0, 12, 8]], thickness: 0.2 },    // Back wall (Y=12)
+        // Perimeter walls along Y-axis (constant X)
+        { id: 'W3', points: [[0, 0, 0], [0, 12, 0], [0, 12, 8], [0, 0, 8]], thickness: 0.2 },        // Left wall (X=0)
+        { id: 'W4', points: [[12, 0, 0], [12, 12, 0], [12, 12, 8], [12, 0, 8]], thickness: 0.2 }     // Right wall (X=12)
     ],
 
     // Supports (point location, type: 'fixed', 'pinned', 'roller')
