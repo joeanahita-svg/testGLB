@@ -99,19 +99,12 @@ const structuralData = {
 
     // Slabs (defined by 4 corner points - HORIZONTAL planes parallel to XY plane)
     // All 4 points have the SAME Z coordinate (floor level)
-    slabs: [
-        { id: 'S1', points: [[0, 0, 0], [12, 0, 0], [12, 12, 0], [0, 12, 0]], thickness: 0.2 },      // Ground floor at z=0
-        { id: 'S2', points: [[0, 0, 4], [12, 0, 4], [12, 12, 4], [0, 12, 4]], thickness: 0.2 },      // First floor at z=4
-        { id: 'S3', points: [[0, 0, 8], [12, 0, 8], [12, 12, 8], [0, 12, 8]], thickness: 0.2 }       // Second floor/Roof at z=8
-    ],
+    slabs: [],
 
     // Walls (defined by 4 corner points - VERTICAL planes parallel to Z axis)
-    // Points have VARYING Z coordinates (from bottom z=0 to top z=8)
+    // Points ordered: bottom-left, bottom-right, top-right, top-left
     walls: [
-        { id: 'W1', points: [[0, 0, 0], [12, 0, 0], [12, 0, 8], [0, 0, 8]], thickness: 0.2 },        // Front wall along X axis at Y=0
-        { id: 'W2', points: [[0, 12, 0], [12, 12, 0], [12, 12, 8], [0, 12, 8]], thickness: 0.2 },    // Back wall along X axis at Y=12
-        { id: 'W3', points: [[0, 0, 0], [0, 12, 0], [0, 12, 8], [0, 0, 8]], thickness: 0.2 },        // Left wall along Y axis at X=0
-        { id: 'W4', points: [[12, 0, 0], [12, 12, 0], [12, 12, 8], [12, 0, 8]], thickness: 0.2 }     // Right wall along Y axis at X=12
+        { id: 'W1', points: [[0, 0, 0], [12, 0, 0], [12, 0, 8], [0, 0, 8]], thickness: 0.2 }        // Front wall along X axis at Y=0
     ],
 
     // Supports (point location, type: 'fixed', 'pinned', 'roller')
